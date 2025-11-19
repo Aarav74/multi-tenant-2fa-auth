@@ -1,0 +1,30 @@
+fastapi==0.104.1              # Modern, fast web framework for APIs
+uvicorn[standard]==0.24.0     # ASGI server to run FastAPI
+
+# Database
+sqlalchemy==2.0.23            # ORM (Object-Relational Mapping) - Talk to database using Python
+psycopg2-binary==2.9.9        # PostgreSQL adapter for Python
+alembic==1.13.0               # Database migrations (version control for database)
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0  # JWT token creation and validation
+passlib[bcrypt]==1.7.4            # Password hashing (bcrypt algorithm)
+python-multipart==0.0.6           # Form data parsing
+
+# Two-Factor Authentication
+pyotp==2.9.0                  # Generate and verify TOTP codes
+qrcode[pil]==7.4.2            # Generate QR codes for 2FA setup
+
+# Data Validation
+pydantic==2.5.0               # Data validation using Python type hints
+pydantic-settings==2.1.0      # Settings management
+
+# Configuration
+python-dotenv==1.0.0          # Load environment variables from .env file
+
+# Email (Optional - for future features)
+# fastapi-mail==1.4.1         # Email sending functionality
+
+# Testing (Optional - for development)
+# pytest==7.4.3               # Testing framework
+# httpx==0.25.2               # HTTP client for testing APIs
