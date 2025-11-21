@@ -1023,6 +1023,7 @@
             }
         });
 
+
         // New function to create tenant and user
         async function createTenantAndUser(domain, name, email, password) {
             try {
@@ -1041,7 +1042,7 @@
                     tenant_domain: domain,
                     email: email,
                     password: password,
-                    name: name
+            name: name
                 });
                 
                 showAlert('Account created successfully! Please login.', 'success');
@@ -1098,89 +1099,83 @@
         });
 
         // Setup 2FA - UPDATED
-async function setup2FA() {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        showAlert('Please login first', 'error');
-        return;
-    }
-    
-    document.getElementById('qrLoading').style.display = 'block';
-    document.getElementById('qrCodeImage').style.display = 'none';
-    
-    try {
-        // First, let's get the current user's ID
-        const users = await apiCall('/auth/users', 'GET', null, token);
-        if (users.length === 0) {
-            showAlert('No users found. Please create an account first.', 'error');
-            return;
+        async function setup2FA() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                showAlert('Please login first', 'error');
+                return;
+            }
+            
+            document.getElementById('qrLoading').style.display = 'block';
+            document.getElementById('qrCodeImage').style.display = 'none';
+            
+            try {
+                // Setup 2FA for this user (user inferred from token)
+                const data = await apiCall('/auth/2fa/setup', 'POST', null, token);
+                
+                // Display QR code
+                document.getElementById('qrCodeImage').src = data.qr_code;
+                document.getElementById('qrCodeImage').style.display = 'block';
+                document.getElementById('qrLoading').style.display = 'none';
+                
+                // Display secret
+                document.getElementById('secretKey').textContent = data.secret;
+                
+                showAlert('Scan the QR code with Google Authenticator or similar app', 'info');
+            } catch (error) {
+                showAlert('Error setting up 2FA: ' + error.message, 'error');
+                showScreen('dashboardScreen');
+            }
         }
-        
-        // Use the first user's ID for demo purposes
-        const userId = users[0].id;
-        
-        // Setup 2FA for this user
-        const data = await apiCall(`/auth/2fa/setup?user_id=${userId}`, 'POST', null, token);
-        
-        // Display QR code
-        document.getElementById('qrCodeImage').src = data.qr_code;
-        document.getElementById('qrCodeImage').style.display = 'block';
-        document.getElementById('qrLoading').style.display = 'none';
-        
-        // Display secret
-        document.getElementById('secretKey').textContent = data.secret;
-        
-        showAlert('Scan the QR code with Google Authenticator or similar app', 'info');
-    } catch (error) {
-        showAlert('Error setting up 2FA: ' + error.message, 'error');
-        showScreen('dashboardScreen');
-    }
-}
 
-// Enable 2FA Form - UPDATED
-document.getElementById('enable2FAForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    clearAlerts();
-    
-    const code = document.getElementById('verifyCode').value;
-    const token = localStorage.getItem('access_token');
-    
-    const btn = document.getElementById('enable2FABtnText');
-    const originalText = btn.textContent;
-    btn.innerHTML = '<span class="loading"></span> Enabling...';
-    
-    try {
-        // Get user ID first
-        const users = await apiCall('/auth/users', 'GET', null, token);
-        if (users.length === 0) {
-            throw new Error('No users found');
-        }
-        
-        const userId = users[0].id;
-        
-        // Enable 2FA
-        await apiCall('/auth/2fa/enable', 'POST', {
-            user_id: userId,
-            totp_code: code
-        }, token);
-        
-        showAlert('2FA enabled successfully!', 'success');
-        
-        // Update user info
-        if (currentUser) {
-            currentUser.is_2fa_enabled = true;
-        }
-        
-        setTimeout(() => {
-            displayDashboard(currentUser);
-            showScreen('dashboardScreen');
-        }, 2000);
-    } catch (error) {
-        showAlert('Error enabling 2FA: ' + error.message, 'error');
-    } finally {
-        btn.textContent = originalText;
-    }
-});
+        // Enable 2FA Form - UPDATED
+        document.getElementById('enable2FAForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAlerts();
+            
+            const code = document.getElementById('verifyCode').value.trim();
+            const token = localStorage.getItem('access_token');
+            
+            // Validate code
+            if (!code || code.length !== 6 || !/^\d+$/.test(code)) {
+                showAlert('Please enter a valid 6-digit code', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('enable2FABtnText');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<span class="loading"></span> Enabling...';
+            
+            try {
+                console.log('Starting 2FA enable process...');
+                console.log('TOTP code to verify:', code);
+                
+                // Enable 2FA (user inferred from token)
+                const result = await apiCall('/auth/2fa/enable', 'POST', {
+                    totp_code: code
+                }, token);
+                
+                console.log('2FA enable result:', result);
+                
+                showAlert('2FA enabled successfully!', 'success');
+                
+                // Update user info
+                if (currentUser) {
+                    currentUser.is_2fa_enabled = true;
+                }
+                
+                setTimeout(() => {
+                    displayDashboard(currentUser);
+                    showScreen('dashboardScreen');
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error enabling 2FA:', error);
+                showAlert('Error enabling 2FA: ' + error.message, 'error');
+            } finally {
+                btn.textContent = originalText;
+            }
+        });
 
         // Create Tenant Form
         document.getElementById('createTenantForm').addEventListener('submit', async (e) => {
@@ -1240,3 +1235,4 @@ document.getElementById('enable2FAForm').addEventListener('submit', async (e) =>
     </script>
 </body>
 </html>
+```
